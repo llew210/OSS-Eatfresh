@@ -109,7 +109,7 @@ streamlit run app/app.py
 ## 라이선스
 
 - **코드:** [MIT License](LICENSE)
-- **데이터셋:** [결정 예정. 공공자료의 이용 조건을 확인한 뒤 정합니다.]
+- **데이터셋:** CC BY-NC 4.0
 - **사용한 라이브러리와 모델의 라이선스:** [docs/licenses.md](docs/licenses.md)
 
 ## 기여하기
