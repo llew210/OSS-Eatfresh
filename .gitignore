@@ -427,15 +427,15 @@ FodyWeavers.xsd
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
 
+
 # ============================================================
-# 프로젝트 추가 설정 (GitHub의 Python 템플릿 .gitignore 맨 아래에 붙여넣기)
+# 프로젝트 추가 설정 (EatFresh)
 # ============================================================
 
 # --- 비밀값 (API 키 등). 절대 올리지 않기 ---
 .env
 .env.*
 !.env.example
-.streamlit/secrets.toml
 
 # --- 가상환경 ---
 venv/
@@ -449,14 +449,46 @@ data/raw_receipts/*
 data/private/*
 !data/private/.gitkeep
 
-# 폴더 밖에 실수로 둔 영수증 이미지 방지용 (필요하면 주석 해제)
-# receipts/
-# *receipt*.jpg
-# *receipt*.jpeg
-# *receipt*.png
-# *receipt*.heic
+# 폴더 밖에 실수로 둔 영수증 이미지 방지 (샘플 폴더는 예외)
+*receipt*.jpg
+*receipt*.jpeg
+*receipt*.png
+*receipt*.heic
+!data/sample_receipts/*
 
-# --- 임시 파일, 결과물 ---
+# --- 웹에서 업로드된 영수증 이미지 ---
+uploads/*
+!uploads/.gitkeep
+# static 폴더 안에 업로드를 저장하는 경우에만 주석 해제
+# static/uploads/*
+# !static/uploads/.gitkeep
+
+# --- OCR 전처리 결과물 (사용할 경우에만 주석 해제) ---
+# output/
+# debug/
+
+# --- 로컬 데이터베이스 (SQLite) ---
+# DB 구조는 .sql 파일로 관리하고, 실제 DB 파일은 올리지 않기
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite3-journal
+
+# --- 레시피 API 응답 캐시 ---
+cache/
+# 시연용 데이터는 data/reference/ 같은 다른 폴더에 두기.
+
+# --- C언어 빌드 결과물 ---
+*.o
+*.obj
+*.exe
+*.out
+
+# --- 임시 파일, 로그 ---
 tmp/
 temp/
 *.log
