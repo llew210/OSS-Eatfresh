@@ -1,3 +1,6 @@
+import numpy as np
+import cv2
+
 import easyocr
 
 from pathlib import Path
@@ -5,14 +8,23 @@ from pathlib import Path
 project_dir = Path(__file__).resolve().parent.parent
 
 image_path = project_dir / "data" / "sample_receipts" / "KakaoTalk_20261115_223640739.jpg"
-
+print("프로젝트 경로:", project_dir)
+print("이미지 경로:", image_path)
+print("파일 존재 여부:", image_path.is_file())
 if not image_path.is_file():
-    print("이미지를 찾을 수 없습니다")
+    raise FileNotFoundError("이미지를 찾을 수 없습니다")
 
 else:
     reader = easyocr.Reader(['ko','en'],gpu=False)
+   
 
-    results = reader.readtext(str(image_path),detail=1)
+
+    image_data = np.fromfile(str(image_path),dtype=np.uint8)
+    image = cv2.imdecode(image_data,cv2.IMREAD_COLOR)
+
+    if image is None:
+        raise ValueError("이미지를 읽을 수 없습니다.")
+    results = reader.readtext(image,detail=1)
 
     text_data = []
 
@@ -56,19 +68,12 @@ for i, row in enumerate(rows, start=1):
     texts = [item["text"] for item in row]
     print(f"{i}행:{' | '.join(texts)}")
 
-import cv2
 
-image = cv2.imread(str(image_path))
+target_row = rows[12]
 
-if image is None:
-    print("이미지를 읽을 수 없습니다")
-
-else:
-    target_row = rows[12]
-
-    center_y = sum(
-        item["y"] for item in target_row
-    )/len(target_row)
+center_y = sum(
+    item["y"] for item in target_row
+) / len(target_row)
 
 height, width = image.shape[:2]
 
