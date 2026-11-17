@@ -124,22 +124,22 @@ Flask 로컬 서버를 실행한 뒤, 브라우저에서 터미널에 표시된 
 ```
 .
 EatFresh/
-├── .gitignore                         ✅
-├── .gitattributes                     ✅ 줄바꿈 통일
-├── README.md                          ✅
-├── requirements.txt                   ✅
-├── .env.example                       ✅ 양식만
-├── .env                               ❌ 실제 API 키
-├── .venv/                             ❌ 가상환경
+├── .gitignore                        
+├── .gitattributes                    
+├── README.md                          
+├── requirements.txt                   
+├── .env.example                       
+├── .env                             
+├── .venv/                             
 │
-├── app.py                             ✅ 서버 실행 진입점
+├── app.py                             
 │
-├── docs/                              ✅ 요구사항 분석서, 회의 자료
+├── docs/                              
 ├── db/
-│   ├── schema.sql                     ✅ 테이블 설계도
-│   └── eatfresh.db                    ❌ 실행 시 자동 생성
+│   ├── schema.sql                    
+│   └── eatfresh.db                    
 │
-├── src/                               ✅ Python 로직
+├── src/                             
 │   ├── database.py
 │   ├── ingredients.py
 │   ├── expiry.py
@@ -148,24 +148,24 @@ EatFresh/
 │   ├── recipes.py
 │   └── cooking.py
 │
-├── templates/                         ✅ HTML 화면
-├── static/                            ✅ CSS, JS
+├── templates/                         
+├── static/                           
 │   ├── css/
 │   └── js/
 │
 ├── data/
-│   ├── raw_receipts/.gitkeep          ✅ (폴더 안 사진은 ❌)
-│   ├── private/.gitkeep               ✅ (폴더 안 파일은 ❌)
-│   ├── sample_receipts/               ✅ 가짜/AI 영수증만
-│   └── reference/                     ✅ 공개 참고 데이터
+│   ├── raw_receipts/.gitkeep         
+│   ├── private/.gitkeep             
+│   ├── sample_receipts/              
+│   └── reference/                     
 │       ├── expiry_reference.csv
 │       ├── normalization_rules.csv
 │       └── recipes_demo.json
 │
-├── uploads/.gitkeep                   ✅ (업로드 사진은 ❌)
-├── cache/                             ❌ API 응답 캐시 (자동 생성)
-├── c_src/                             ✅ C 코드 (쓰게 될 경우)
-└── tests/                             ✅ 테스트 코드
+├── uploads/.gitkeep                   
+├── cache/                             
+├── c_src/                            
+└── tests/                             
 ```
 
 C 코드를 사용하게 되면 `c_modules/` 폴더를 추가하고 빌드 방법을 이 문서에 적습니다.
