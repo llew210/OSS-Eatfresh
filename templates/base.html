@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}EatFresh{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">EatFresh</a>
+    <nav>
+      <a href="{{ url_for('home') }}"
+         class="{{ 'active' if request.endpoint == 'home' }}">홈</a>
+      <a href="{{ url_for('ingredient_list') }}"
+         class="{{ 'active' if request.endpoint == 'ingredient_list' }}">냉장고</a>
+      <a href="{{ url_for('recipe_list') }}"
+         class="{{ 'active' if request.endpoint in ('recipe_list', 'recipe_detail') }}">레시피</a>
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">
+        {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
