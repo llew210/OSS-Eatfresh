@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}홈 · EatFresh{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>EatFresh</h1>
+  <p>냉장고 속 재료로<br>지금 만들 수 있는 요리를 추천해요!</p>
+</section>
+
+<section class="quick">
+  <a class="card" href="{{ url_for('receipt') }}">
+    <strong>식재료 등록</strong><span>직접 입력 / 영수증</span>
+  </a>
+  <a class="card" href="{{ url_for('ingredient_list') }}">
+    <strong>냉장고 보기</strong><span>보유 재료 관리</span>
+  </a>
+  <a class="card" href="{{ url_for('recipe_list') }}">
+    <strong>레시피 추천</strong><span>지금 만들 수 있는 요리</span>
+  </a>
+</section>
+
+<section>
+  <h2>소비기한이 임박한 재료</h2>
+  {% if expiring %}
+    <ul class="list">
+      {% for item in expiring %}
+        <li>
+          <span class="name">{{ item.name }}</span>
+          <span class="sub">{{ item.quantity }}{{ item.unit }} · {{ item.storage }}</span>
+          <span class="badge {{ 'danger' if item.d_day <= 1 else 'warn' }}">D-{{ item.d_day }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">임박한 재료가 없어요. 영수증을 등록해 재료를 추가해 보세요.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>오늘의 추천 레시피</h2>
+  {% for r in recommended %}
+    <a class="recipe" href="{{ url_for('recipe_detail', recipe_id=r.id) }}">
+      <div>
+        <strong>{{ r.name }}</strong>
+        <span class="sub">
+          보유 재료 {{ (r.match_rate * 100) | round | int }}%
+          {% if r.missing %}· 부족: {{ r.missing | join(', ') }}{% else %}· 바로 조리 가능{% endif %}
+        </span>
+      </div>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}
