@@ -1,4 +1,11 @@
-from cooking import recipes
+import json
+import os
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(base_dir, "..", "data", "reference", "recipes_demo.json")
+
+with open(json_path, "r", encoding="utf-8") as f:
+    recipes = json.load(f)
 
 basic_items = ["소금","간장","설탕","후추","참기름"]
 
