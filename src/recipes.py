@@ -41,12 +41,24 @@ def recommend(urgent_items, my_items):
     )
     return result[:3]
 
+def make_storage_text(recipe):
+    storage = recipe["storage"]
+    if storage["fridge"]:
+        fridge = "냉장 가능(" + str(storage["fridge_days"]) + "일)"
+    else:
+        fridge = "냉장 불가"
+    if storage["freezer"]:
+        freezer = "냉동 가능"
+    else:
+        freezer = "냉동 비추천"
+    return fridge + ", " + freezer
+
 def make_result_text(urgent_items, my_items):
     texts = []
     rank = 1
     for r in recommend(urgent_items, my_items):
         rate = round(have_rate(r, my_items) * 100)
-        texts.append(str(rank) + "순위:" + r["name"] + " (보유율 " + str(rate) + "%)")
+        texts.append(str(rank) + "순위:" + r["name"] + " (보유율 " + str(rate) + "%) / " + make_storage_text(r))
         rank += 1
     return texts
 
@@ -90,4 +102,3 @@ if __name__ == "__main__":
     print("----- 만드는 법 -----")
     for text in make_detail_text("된장찌개"):
         print(text)
-
