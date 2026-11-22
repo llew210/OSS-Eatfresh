@@ -2,6 +2,7 @@
   {
     "name": "된장찌개",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 3, "freezer": false},
     "ingredients": [
       {"name": "두부", "amount": 75, "unit": "g"},
       {"name": "애호박", "amount": 50, "unit": "g"},
@@ -27,6 +28,7 @@
   {
     "name": "두부전",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 2, "freezer": true},
     "ingredients": [
       {"name": "두부", "amount": 150, "unit": "g"},
       {"name": "계란", "amount": 1, "unit": "개"},
@@ -48,6 +50,7 @@
   {
     "name": "두부전골",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 2, "freezer": false},
     "ingredients": [
       {"name": "두부", "amount": 150, "unit": "g"},
       {"name": "배추", "amount": 75, "unit": "g"},
@@ -75,6 +78,7 @@
   {
     "name": "토마토 계란볶음",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 2, "freezer": false},
     "ingredients": [
       {"name": "토마토", "amount": 150, "unit": "g"},
       {"name": "계란", "amount": 2, "unit": "개"},
@@ -94,6 +98,7 @@
   {
     "name": "감자조림",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 3, "freezer": false},
     "ingredients": [
       {"name": "감자", "amount": 150, "unit": "g"},
       {"name": "양파", "amount": 50, "unit": "g"},
@@ -115,6 +120,7 @@
   {
     "name": "시금치무침",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 2, "freezer": false},
     "ingredients": [
       {"name": "시금치", "amount": 100, "unit": "g"},
       {"name": "파", "amount": 5, "unit": "g"},
@@ -135,6 +141,7 @@
   {
     "name": "참치마요덮밥",
     "servings": 1,
+    "storage": {"fridge": true, "fridge_days": 1, "freezer": false},
     "ingredients": [
       {"name": "밥", "amount": 210, "unit": "g"},
       {"name": "참치캔", "amount": 1, "unit": "개"},
