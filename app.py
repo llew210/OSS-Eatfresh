@@ -71,10 +71,9 @@ def build_recommendations(rows):
 
     result = []
     for r in recipes.recommend(urgent_items, my_items):
-        missing = [i for i in r["ingredients"]
-                   if i not in recipes.basic_items and i not in my_items]
+        missing = [n for n in recipes.get_names(r)
+                   if n not in recipes.basic_items and n not in my_items]
         result.append({
-            "id": recipes.recipes.index(r),  # recipes.py에 id가 없어서 목록 번호를 사용
             "name": r["name"],
             "match_rate": recipes.have_rate(r, my_items),
             "missing": missing,
@@ -109,9 +108,9 @@ def recipe_list():
     return render_template("placeholder.html", title="추천 레시피")
 
 
-@app.route("/recipes/<int:recipe_id>")
-def recipe_detail(recipe_id):
-    return render_template("placeholder.html", title=f"레시피 {recipe_id}")
+@app.route("/recipes/<recipe_name>")
+def recipe_detail(recipe_name):
+    return render_template("placeholder.html", title=recipe_name)
 
 
 if __name__ == "__main__":
