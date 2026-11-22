@@ -6,17 +6,22 @@ from src import recipes  # 김서현 님 코드: import해도 실행되는 부�
 
 app = Flask(__name__)
 app.secret_key = "dev-key"  # flash 메시지에 필요 (나중에 .env로 이동)
+# Flask - secret_key
+# -> Flask가 flash 메세지를 브라우저 쿠키에 잠깐 담아 두는데, 이 때 쿠키가 변조되지 않았는지 확인하려고 이 키로 서명함
+# flash()를 호출하려면 secret key가 필요함
+# 인터넷에 실제로 배포하려면 .env로 옮겨야 하지만 로컬 서버에서 사용할 것이므로 "dev-key" 그대로 둬도 됨.
 
 
 # ------------------------------------------------------------
 # 더미 데이터 1: DB 행 (db/schema.sql의 컬럼 이름을 그대로 사용)
-#   나중에 ingredients.list_all() 결과로 교체
+#   나중에 ingredients.list_all() 결과(src/ingredients.py)로 교체
 #   날짜는 "오늘 기준"으로 만들어서, 언제 실행해도 D-day가 의미 있게 나옴
 # ------------------------------------------------------------
 def _day(n):
     return (date.today() + timedelta(days=n)).isoformat()
 
-
+# 나중에 SQLite에서 꺼낸 실제 재료 목록 입력 + '_day()'함수 삭제
+# 저장된 재료를 전부 꺼내서 app.py가 쓰는 모양으로 돌려주는 함수 추가하기(src/ingredients.py) => SQLite 결과를 튜플로 주면 안되고 dict(row) 형태로 줘야 함
 DUMMY_INGREDIENTS = [
     {"id": 1, "name": "파",   "quantity": 1,   "unit": "개", "storage": "냉장", "purchase_date": _day(-3), "expiry_date": _day(1)},
     {"id": 2, "name": "두부", "quantity": 1,   "unit": "개", "storage": "냉장", "purchase_date": _day(-3), "expiry_date": _day(2)},
@@ -29,6 +34,7 @@ DUMMY_INGREDIENTS = [
 # 더미 데이터 2: OCR 결과 (src/ocr.py의 rows와 같은 모양, 글자만 남김)
 #   "한 줄 = 글자 조각들의 리스트". 영수증 화면을 만들 때 사용
 # ------------------------------------------------------------
+# 나중에 업로드된 영수증에서 읽은 실제 결과 입력
 DUMMY_OCR_ROWS = [
     ["2026-11-18", "14:02"],
     ["두부", "1", "2,500"],
@@ -38,8 +44,9 @@ DUMMY_OCR_ROWS = [
 
 
 # ------------------------------------------------------------
-# 임시 도우미 함수 (나중에 expiry.py로 옮길 부분)
+# 임시 도우미 함수 (src/expiry.py => 소비기한 남은 일수 계산 함수, 임박 재료 선정 함수, )
 # ------------------------------------------------------------
+#유통기한까지 남은 일수 계산
 def with_d_day(rows):
     """DB 행에 d_day(남은 일수)를 계산해서 붙인다."""
     today = date.today()
@@ -49,13 +56,13 @@ def with_d_day(rows):
         result.append({**r, "d_day": d_day})
     return result
 
-
+#임박한 재료 선정 함수
 def get_expiring_soon(rows, days=3):
     """남은 기간이 days일 이하인 재료를 임박 순으로 반환."""
     soon = [r for r in with_d_day(rows) if r["d_day"] <= days]
     return sorted(soon, key=lambda r: r["d_day"])
 
-
+#DB 행을 추천 함수 입력으로 바꾸고, 화면용 충족률과 부족 재료를 붙임 => ??
 def build_recommendations(rows):
     """recipes.recommend()는 이름 리스트 2개를 받으므로, DB 행에서 이름만 뽑아서 넘긴다.
     화면에 필요한 충족률/부족 재료는 recipes.py의 함수로 계산해서 붙인다."""
