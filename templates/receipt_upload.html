@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}영수증 등록 · EatFresh{% endblock %}
+
+{% block content %}
+<h2 class="page-title">영수증으로 식재료 등록</h2>
+<p class="sub">사진은 이 컴퓨터 안에서만 처리되고, 외부로 전송되지 않아요.</p>
+
+<form id="upload-form" method="post" action="{{ url_for('receipt_analyze') }}" enctype="multipart/form-data">
+  <label class="upload-zone" for="receipt-file">
+    <img id="preview" class="preview" alt="선택한 영수증 미리보기" hidden>
+    <span id="upload-text">
+      <strong>영수증 사진 선택</strong><br>
+      <span class="sub">jpg, png, webp · 10MB 이하</span>
+    </span>
+  </label>
+  <input class="visually-hidden" type="file" id="receipt-file" name="receipt"
+         accept="image/jpeg,image/png,image/webp" required>
+
+  <div class="actions">
+    <a class="btn ghost" href="{{ url_for('receipt_manual') }}">영수증 없이 직접 입력</a>
+    <button type="submit" class="btn primary" id="analyze-btn" disabled>사진 분석하기</button>
+  </div>
+</form>
+
+<script src="{{ url_for('static', filename='js/receipt.js') }}"></script>
+{% endblock %}
