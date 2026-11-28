@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ '인식 결과 확인' if image else '직접 입력' }} · EatFresh{% endblock %}
+
+{% block content %}
+{# 품목 한 줄. 화면에 그릴 때와 '품목 직접 추가' 템플릿에서 같이 쓴다. #}
+{% macro item_row(item) %}
+<li class="item{% if item.low_confidence %} needs-check{% endif %}{% if item.confirmed %} confirmed{% endif %}"
+    data-low="{{ 1 if item.low_confidence else 0 }}">
+  <input type="hidden" name="low" value="{{ 1 if item.low_confidence else 0 }}">
+  <input type="hidden" name="confirmed" value="{{ 1 if item.confirmed else 0 }}">
+  <input type="hidden" name="conf" value="{{ item.confidence_pct if item.confidence_pct is not none else '' }}">
+
+  <div class="item-head">
+    {% if item.low_confidence %}
+      <span class="badge warn">확인 필요 · 신뢰도 {{ item.confidence_pct }}%</span>
+    {% elif item.confidence_pct is not none %}
+      <span class="badge ok">신뢰도 {{ item.confidence_pct }}%</span>
+    {% else %}
+      <span class="badge muted">직접 입력</span>
+    {% endif %}
+    <button type="button" class="icon-btn remove" aria-label="이 품목 삭제">×</button>
+  </div>
+
+  <div class="item-grid">
+    <label class="field f-name">재료명
+      <input type="text" name="name" value="{{ item.name }}" required>
+    </label>
+    <label class="field f-qty">수량
+      <input type="number" name="quantity" min="0" step="any" inputmode="decimal"
+             value="{{ item.quantity if item.quantity is not none else '' }}" required>
+    </label>
+    <label class="field f-unit">단위
+      <select name="unit">
+        {% for u in ['개', 'g'] %}<option value="{{ u }}" {{ 'selected' if item.unit == u }}>{{ u }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field f-expiry">소비기한 <span class="sub">비워 두면 구매일 기준으로 자동 추정해요</span>
+      <input type="date" name="expiry_date" value="{{ item.expiry_date }}">
+    </label>
+  </div>
+
+  {% if item.candidates %}
+  <div class="candidates">
+    <span class="sub">이렇게 읽었을 수도 있어요</span>
+    {% for c in item.candidates %}<button type="button" class="chip" data-name="{{ c }}">{{ c }}</button>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if item.low_confidence %}
+  <label class="confirm">
+    <input type="checkbox" class="confirm-box"{% if item.confirmed %} checked{% endif %}>
+    재료명과 수량이 맞는지 확인했어요
+  </label>
+  {% endif %}
+</li>
+{% endmacro %}
+
+{% set pending = items | selectattr('low_confidence') | rejectattr('confirmed') | list | length %}
+
+<h2 class="page-title">{{ '인식 결과 확인' if image else '식재료 직접 입력' }}</h2>
+<p class="sub">
+  {% if image %}영수증에서 읽은 내용이에요. 잘못 읽은 곳은 고쳐 주세요.{% else %}재료명, 수량, 소비기한을 직접 입력해 주세요.{% endif %}
+</p>
+
+{% if image %}
+<a class="receipt-thumb" href="{{ url_for('receipt_image', filename=image) }}" target="_blank" rel="noopener">
+  <img src="{{ url_for('receipt_image', filename=image) }}" alt="업로드한 영수증 (누르면 크게 보기)">
+</a>
+{% endif %}
+
+<form id="review-form" method="post" action="{{ url_for('receipt_save') }}">
+  <input type="hidden" name="image" value="{{ image or '' }}">
+
+  <label class="field purchase">구매일
+    <input type="date" name="purchase_date" value="{{ purchase_date }}" required>
+  </label>
+  {% if not purchase_date %}
+    <p class="notice warn-box">구매일을 읽지 못했어요. 소비기한 계산에 쓰이니 입력해 주세요.</p>
+  {% endif %}
+
+  <ul class="items" id="item-list">
+    {% for item in items %}{{ item_row(item) }}{% endfor %}
+  </ul>
+  <template id="row-template">{{ item_row(blank_item) }}</template>
+
+  <button type="button" class="btn ghost" id="add-row">+ 품목 직접 추가</button>
+
+  <div class="save-bar">
+    <p id="save-status" class="status{% if pending %} warn{% endif %}" role="status">
+      {% if pending %}확인이 필요한 품목 {{ pending }}개가 남아 있어요.{% else %}모든 품목을 확인했어요.{% endif %}
+    </p>
+    <div class="actions">
+      <a class="btn ghost" href="{{ url_for('receipt') }}">처음으로</a>
+      <button type="submit" class="btn primary" id="save-btn"{% if pending %} disabled{% endif %}>등록하기</button>
+    </div>
+  </div>
+</form>
+
+<script src="{{ url_for('static', filename='js/receipt.js') }}"></script>
+{% endblock %}
