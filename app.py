@@ -7,10 +7,10 @@ from datetime import date, timedelta
 from flask import (Flask, abort, flash, redirect, render_template, request,
                    send_from_directory, url_for)
 
-from src import recipes
+from src import recipes  # 김서현 님 코드: import해도 실행되는 부분이 없어 바로 사용 가능
 
 app = Flask(__name__)
-app.secret_key = "dev-key"
+app.secret_key = "dev-key"  # flash 메시지에 필요 (나중에 .env로 이동)
 # Flask - secret_key
 # -> Flask가 flash 메세지를 브라우저 쿠키에 잠깐 담아 두는데, 이 때 쿠키가 변조되지 않았는지 확인하려고 이 키로 서명함
 # flash()를 호출하려면 secret key가 필요함
@@ -32,6 +32,7 @@ UNITS = ("g", "개")
 # schema.sql의 storage 컬럼이 NOT NULL이라 임시로 기본값만 넣는다. => 컬럼 정리 후 삭제
 DEFAULT_STORAGE = "냉장"
 
+
 # ------------------------------------------------------------
 # 더미 데이터 1: DB 행 (db/schema.sql의 컬럼 이름을 그대로 사용)
 #   나중에 ingredients.list_all() 결과(src/ingredients.py)로 교체
@@ -39,7 +40,6 @@ DEFAULT_STORAGE = "냉장"
 # ------------------------------------------------------------
 def _day(n):
     return (date.today() + timedelta(days=n)).isoformat()
-# 저장된 소비기한이 없기 때문
 
 # 나중에 SQLite에서 꺼낸 실제 재료 목록 입력 + '_day()'함수 삭제
 # 저장된 재료를 전부 꺼내서 app.py가 쓰는 모양으로 돌려주는 함수 추가하기(src/ingredients.py) => SQLite 결과를 튜플로 주면 안되고 dict(row) 형태로 줘야 함
@@ -79,13 +79,14 @@ def with_d_day(rows):
 
 #임박한 재료 선정 함수
 def get_expiring_soon(rows, days=3):
+    """남은 기간이 days일 이하인 재료를 임박 순으로 반환."""
     soon = [r for r in with_d_day(rows) if r["d_day"] <= days]
     return sorted(soon, key=lambda r: r["d_day"])
 
-#DB 행을 추천 함수 입력으로 바꾸고, 화면용 충족률과 부족 재료를 붙임
-#recipes.py에 '부족한 재료 이름 목록'을 돌려주는 함수가 없어 app.py에서 직접 레시피와 재료를 불러와 비교하여 부족 재료 목록 만듦.
-#부족한 재료 목록을 recipes.py에서 함수로 만들어 app.py에서는 호출만 하는 것이 안전할 수 있음
+#DB 행을 추천 함수 입력으로 바꾸고, 화면용 충족률과 부족 재료를 붙임 => ??
 def build_recommendations(rows):
+    """recipes.recommend()는 이름 리스트 2개를 받으므로, DB 행에서 이름만 뽑아서 넘긴다.
+    화면에 필요한 충족률/부족 재료는 recipes.py의 함수로 계산해서 붙인다."""
     my_items = [r["name"] for r in rows]
     urgent_items = [r["name"] for r in get_expiring_soon(rows)]
 
@@ -99,6 +100,7 @@ def build_recommendations(rows):
             "missing": missing,
         })
     return result
+
 
 # ------------------------------------------------------------
 # 임시 함수 1: 소비기한 추정 (src/expiry.py가 완성되면 그쪽 함수로 교체)
@@ -118,6 +120,7 @@ def estimate_expiry_date(name, purchase_date):
     """품목명과 구매일(YYYY-MM-DD)을 받아 예상 소비기한(YYYY-MM-DD)을 돌려준다."""
     days = TEMP_SHELF_DAYS.get(name, TEMP_DEFAULT_DAYS)
     return (date.fromisoformat(purchase_date) + timedelta(days=days)).isoformat()
+
 
 # ------------------------------------------------------------
 # 임시 함수 2: OCR 실행 (src/receipt_ocr.py를 함수로 바꾸면 교체)
@@ -146,6 +149,85 @@ def run_ocr(image_path):
     }
 
 
+# ------------------------------------------------------------
+# 임시 함수 3: 재료 저장 (src/ingredients.py가 완성되면 SQLite INSERT로 교체)
+#   지금은 DUMMY_INGREDIENTS(메모리)에 추가한다. 서버를 다시 켜면 사라진다.
+# ------------------------------------------------------------
+def save_ingredients(items):
+    """items: schema.sql 컬럼과 같은 키를 가진 dict 목록(id 제외)."""
+    next_id = max((r["id"] for r in DUMMY_INGREDIENTS), default=0) + 1
+    for offset, item in enumerate(items):
+        DUMMY_INGREDIENTS.append({"id": next_id + offset, **item})
+
+
+# ------------------------------------------------------------
+# 영수증 화면 도우미
+# ------------------------------------------------------------
+BLANK_ITEM = {"name": "", "quantity": None, "unit": "개",
+              "expiry_date": "", "low_confidence": False, "confirmed": False,
+              "confidence_pct": None, "candidates": []}
+
+
+def ocr_product_to_item(product):
+    """OCR 결과 1건(product)을 확인 화면에서 쓰는 모양으로 바꾼다."""
+    name = product["product_name"]
+    conf = product.get("name_confidence") or 0.0
+    return {
+        **BLANK_ITEM,
+        "name": name,
+        "quantity": product["quantity"],
+        "low_confidence": conf <= CONFIDENCE_THRESHOLD or not name.strip(),
+        "confidence_pct": round(conf * 100),
+        "candidates": [c for c in product["name_candidates"] if c != name],
+    }
+
+
+def form_to_item(form_row):
+    """저장 요청의 한 줄을 확인 화면에서 쓰는 모양으로 되돌린다(검증 실패로 다시 보여줄 때)."""
+    conf = form_row["conf"]
+    return {
+        **BLANK_ITEM,
+        "name": form_row["name"],
+        "quantity": form_row["quantity"] or None,
+        "unit": form_row["unit"] or "개",
+        "expiry_date": form_row["expiry_date"],
+        "low_confidence": form_row["low"] == "1",
+        "confirmed": form_row["confirmed"] == "1",
+        "confidence_pct": int(conf) if conf.isdigit() else None,
+    }
+
+
+def read_form_rows(form):
+    """같은 이름으로 여러 번 들어온 입력값을 '한 줄 = dict' 목록으로 묶는다."""
+    keys = ["name", "quantity", "unit", "expiry_date", "low", "confirmed", "conf"]
+    columns = {k: form.getlist(k) for k in keys}
+    rows = []
+    for i in range(len(columns["name"])):
+        rows.append({k: (columns[k][i].strip() if i < len(columns[k]) else "") for k in keys})
+    return rows
+
+
+def is_iso_date(text):
+    try:
+        date.fromisoformat(text)
+        return True
+    except ValueError:
+        return False
+
+
+def valid_image_name(name):
+    """uploads/에 실제로 있는 우리가 만든 파일 이름일 때만 돌려준다."""
+    if name and IMAGE_NAME_RE.match(name) and os.path.isfile(os.path.join(UPLOAD_DIR, name)):
+        return name
+    return None
+
+
+def render_review(items, purchase_date, image):
+    return render_template("receipt_review.html", items=items,
+                           purchase_date=purchase_date or "", image=image,
+                           blank_item=BLANK_ITEM)
+
+
 @app.route("/")
 def home():
     return render_template(
@@ -156,16 +238,134 @@ def home():
 
 
 # ------------------------------------------------------------
+# 영수증 등록: 1) 사진 선택 -> 2) 인식 결과 확인/수정 -> 3) 저장
+# ------------------------------------------------------------
+@app.route("/receipt")
+def receipt():
+    return render_template("receipt_upload.html")
+
+
+@app.route("/receipt/analyze", methods=["POST"])
+def receipt_analyze():
+    file = request.files.get("receipt")
+    if not file or not file.filename:
+        flash("영수증 사진을 선택해 주세요.")
+        return redirect(url_for("receipt"))
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXT:
+        flash("jpg, png, webp 형식의 사진만 올릴 수 있어요.")
+        return redirect(url_for("receipt"))
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    filename = uuid.uuid4().hex + ext
+    file.save(os.path.join(UPLOAD_DIR, filename))
+
+    result = run_ocr(os.path.join(UPLOAD_DIR, filename))
+    items = [ocr_product_to_item(p) for p in result["products"]]
+    if not result["purchase_date"]:
+        flash("영수증에서 구매일을 읽지 못했어요. 구매일을 직접 입력해 주세요.")
+    return render_review(items, result["purchase_date"], filename)
+
+
+@app.route("/receipt/manual")
+def receipt_manual():
+    """영수증 없이 직접 입력(OCR을 쓰지 않는 대안 경로)."""
+    return render_review([], date.today().isoformat(), None)
+
+
+@app.route("/receipt/image/<filename>")
+def receipt_image(filename):
+    if not IMAGE_NAME_RE.match(filename):
+        abort(404)
+    return send_from_directory(UPLOAD_DIR, filename)
+
+
+@app.route("/receipt/save", methods=["POST"])
+def receipt_save():
+    purchase_date = request.form.get("purchase_date", "").strip()
+    image = valid_image_name(request.form.get("image", ""))
+    rows = read_form_rows(request.form)
+
+    errors = []
+    if not is_iso_date(purchase_date):
+        errors.append("구매일을 입력해 주세요.")
+
+    clean = []
+    for n, row in enumerate(rows, start=1):
+        if not row["name"] and not row["quantity"]:
+            continue  # 비어 있는 줄은 무시
+        if not row["name"]:
+            errors.append(f"{n}번째 품목의 재료명을 입력해 주세요.")
+            continue
+        try:
+            qty = float(row["quantity"])
+            if not math.isfinite(qty) or qty <= 0:
+                raise ValueError
+        except ValueError:
+            errors.append(f"'{row['name']}'의 수량을 0보다 큰 숫자로 입력해 주세요.")
+            continue
+        if row["unit"] not in UNITS:
+            errors.append(f"'{row['name']}'의 단위가 올바르지 않아요.")
+            continue
+        if row["expiry_date"] and not is_iso_date(row["expiry_date"]):
+            errors.append(f"'{row['name']}'의 소비기한 형식이 올바르지 않아요.")
+            continue
+        if row["low"] == "1" and row["confirmed"] != "1":
+            errors.append(f"'{row['name']}'은(는) 인식 신뢰도가 낮아 확인이 필요해요.")
+            continue
+        clean.append({
+            "name": row["name"],
+            "quantity": int(qty) if qty == int(qty) else qty,
+            "unit": row["unit"],
+            "storage": DEFAULT_STORAGE,
+            "expiry_date": row["expiry_date"],   # 비어 있으면 아래에서 추정
+        })
+
+    if not clean and not errors:
+        errors.append("등록할 재료가 없어요. 품목을 하나 이상 입력해 주세요.")
+
+    if errors:
+        for message in errors:
+            flash(message)
+        return render_review([form_to_item(r) for r in rows], purchase_date, image)
+
+    # 소비기한을 입력하지 않은 품목은 추정값으로 채운다
+    estimated = 0
+    for item in clean:
+        if not item["expiry_date"]:
+            item["expiry_date"] = estimate_expiry_date(item["name"], purchase_date)
+            estimated += 1
+        item["purchase_date"] = purchase_date
+
+    save_ingredients(clean)
+
+    # 영수증 사진은 개인정보가 있을 수 있으므로 저장이 끝나면 지운다
+    if image:
+        try:
+            os.remove(os.path.join(UPLOAD_DIR, image))
+        except OSError:
+            pass
+
+    message = f"재료 {len(clean)}개를 등록했어요."
+    if estimated:
+        message += f" (소비기한 자동 추정 {estimated}개)"
+    flash(message)
+    return redirect(url_for("home"))
+
+
+@app.errorhandler(413)
+def too_large(_error):
+    flash("사진 용량이 너무 커요. 10MB 이하의 사진을 올려 주세요.")
+    return redirect(url_for("receipt"))
+
+
+# ------------------------------------------------------------
 # 아직 만들지 않은 페이지: 메뉴 링크가 깨지지 않도록 임시 화면만 보여 줍니다.
 # ------------------------------------------------------------
 @app.route("/ingredients")
 def ingredient_list():
     return render_template("placeholder.html", title="냉장고")
-
-
-@app.route("/receipt")
-def receipt():
-    return render_template("placeholder.html", title="영수증 등록")
 
 
 @app.route("/recipes")
